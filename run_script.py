@@ -1,10 +1,20 @@
-# -*- coding: utf-8 -*-
-""" Script by Toybich Egor
-"""
 from glob import glob 
 import sys
 import platform
 import os
+from ap_handle import APHandle
+from ap_parameters import APParameters
+import goalFunction
+from ap_jaya import APJaya
+""" Script by Anton Lobanov and Vladimir Suvorov
+Note: Workbench uses IronPython (Python 2.7)!
+
+Use iterationBuilder = None for updating WB project with user values of parameters
+Use iterationBuilder = 1 for using Jaya algorithm for optimization problems in WB
+For optimization problem you should write a code for a goal (cost) function in goalFunction.py
+
+
+"""
 #from numpy import loadtxt
 #===========================================================================
 #======= This block imports framework files ================================
@@ -36,7 +46,25 @@ if modules_files[2]: exec('from {} import Logger'.format(modules_files[2]))
 #===========================================================================
 #===========================================================================
 #===========================================================================
-print(2)
+
+_logger = Logger('log.txt')
+_log_ = _logger.log
+
+
+def apJayaIterationBuilder(index, outParams):
+    _log_('[apJayaIterationBuilder] index: ' + str(index))
+    _log_('[apJayaIterationBuilder] outParams: ' + str(outParams))
+    apJayaAlgorithmResult =  apJaya.algorithm(index, outParams)
+    _log_('[apJayaIterationBuilder] apJayaAlgorithmResult: ' + str(apJayaAlgorithmResult))
+    parameters = APParameters(
+        inKeys = apParameters.inKeys(),
+        inValues = apJayaAlgorithmResult,
+        outKeys = apParameters.outKeys()
+    )
+    _log_('[apJayaIterationBuilder] completed] ')
+    return parameters
+
+
 if __name__ == '__main__':
     filepath = os.path.abspath(__file__)
     filedir = os.path.dirname(filepath)
@@ -45,163 +73,24 @@ if __name__ == '__main__':
     print('File: ' + filepath)
     cwdp = lambda x: os.path.join(filedir, x)
     #__________________________________________________________
+    
+    
+    apParameters = APParameters()
+    apJaya = APJaya(
+        kids_number = 2,
+        parameters = apParameters
+    )
+
+    apHandle = APHandle(
+        '',
+        apParameters,
+        WBInterface(),
+        iterationCount = 3,
+        iterationBuilder = apJayaIterationBuilder
+    )
+    
+    apHandle.run()
 
 
-    wb = WBInterface()
-            #
-    try:
-        wb.open_any(archive_first=True)
-        wb.find_and_import_parameters()
-            #         #----------------------------------------------------------------
-            #         # Parameters can be imported directly
-
-        #input_p = {'p1':[1,0.1,0.5,0.6]}
-       # wb.input_by_name(input_p)
-        wb.import_parameters()
-
-        #output_p = ['p2']
-        #wb.set_output(output_p)
-            #==============================================================================
-            # Sets maximum number of cores
-            # wb.set_cores_number('SYS')
-
-            # Activate distrubuted solver
-            # wb.set_distributed('SYS', True)
-
-            # Sets unit system
-            # wb.set_unit_system('SYS', unit_sys='NMM')
-            #==============================================================================
-
-        wb.update_project()
-
-            #==============================================================================
-            # Set figure scale
-            # wb.set_figures_scale('SYS', scale='auto')
-            # wb.show_all_bodies('SYS')
-
-            # Picture parameters
-            # overview_args = dict(width=1920, height=1080, zoom_to_fit=True, view='iso')
-            # mesh_args = dict(width=1920*2, height=1080*2, zoom_to_fit=True, view='iso')
-            # env_args = dict(width=1920, height=1080, zoom_to_fit=True, fontfact=1.5, view='iso')
-            # fig_args = dict(width=1920, height=1080, zoom_to_fit=True, fontfact=1.35, view='iso', shade_mode='ShowWireframe')
-            # ani_args = dict(width=1920/2, height=1080/2, zoom_to_fit=True, scale='auto', frames=20, view='iso', shade_mode='ShowWireframe')
-
-
-            # Save pictures parameters
-            # wb.save_overview('SYS', cwdp('pictures'), 'model_overview.jpg', **overview_args)
-            # wb.save_mesh_view('SYS', cwdp('pictures'), 'mesh.png', **mesh_args)
-            # wb.save_setups_view('SYS', cwdp('pictures'), **env_args)
-            # wb.save_figures('SYS', cwdp('pictures'), **fig_args)
-            # wb.save_animations('SYS', cwdp('animations'), **ani_args)
-
-            #----------------------------------------------------------------
-            # Can also save for each Design Point
-            # for i, dp in enumerate(wb.DPs):
-                # wb.set_active_DP(dp)
-
-                # mesh_file = 'mesh_DP{}.png'.format(i)
-                # mesh_args = dict(width=1920*2, height=1080*2, zoom_to_fit=True)
-                # wb.save_mesh_view('SYS', cwdp('pictures'), mesh_file, **mesh_args)
-
-                # fig_pref = 'Result_DP{}'.format(i)
-                # fig_args = dict(fpref=fig_pref, width=1920*2, height=1080*2, zoom_to_fit=True, fontfact=1.35)
-                # wb.save_figures('SYS', cwdp('pictures'), **fig_args)
-
-                # env_pref = 'Setup_DP{}'.format(i)
-                # env_args = dict(fpref=env_pref, width=1920, height=1080, zoom_to_fit=True, fontfact=1.5)
-                # wb.save_setups_view('SYS', cwdp('pictures'), **env_args)
-            #==============================================================================
-
-        wb.output_parameters()
-        wb.export_wb_report()
-
-
-
-    except Exception as err_msg:
-
-        wb.fatal_error(err_msg)
-
-    finally:
-
-      #  wb.archive_if_complete()
-
-        wb.issue_end()
-"""  
-  results = loadtxt("output.txt", delimiter=",")
-    print(results)
-    wb = WBInterface()
-    #
-    try:
-        wb.open_any(archive_first=True)
-        #wb.find_and_import_parameters()
-        #         #----------------------------------------------------------------
-        #         # Parameters can be imported directly
-
-        input_p = {'p1':[results[0][0]], 'p3':[results[1][0]]}
-        wb.input_by_name(input_p)
-        #wb.import_parameters()
-
-        output_p = ['p2','p4']
-        wb.set_output(output_p)
-        # ==============================================================================
-        # Sets maximum number of cores
-        # wb.set_cores_number('SYS')
-
-        # Activate distrubuted solver
-        # wb.set_distributed('SYS', True)
-
-        # Sets unit system
-        # wb.set_unit_system('SYS', unit_sys='NMM')
-        # ==============================================================================
-
-        wb.update_project()
-
-        # ==============================================================================
-        # Set figure scale
-        # wb.set_figures_scale('SYS', scale='auto')
-        # wb.show_all_bodies('SYS')
-
-        # Picture parameters
-        # overview_args = dict(width=1920, height=1080, zoom_to_fit=True, view='iso')
-        # mesh_args = dict(width=1920*2, height=1080*2, zoom_to_fit=True, view='iso')
-        # env_args = dict(width=1920, height=1080, zoom_to_fit=True, fontfact=1.5, view='iso')
-        # fig_args = dict(width=1920, height=1080, zoom_to_fit=True, fontfact=1.35, view='iso', shade_mode='ShowWireframe')
-        # ani_args = dict(width=1920/2, height=1080/2, zoom_to_fit=True, scale='auto', frames=20, view='iso', shade_mode='ShowWireframe')
-
-        # Save pictures parameters
-        # wb.save_overview('SYS', cwdp('pictures'), 'model_overview.jpg', **overview_args)
-        # wb.save_mesh_view('SYS', cwdp('pictures'), 'mesh.png', **mesh_args)
-        # wb.save_setups_view('SYS', cwdp('pictures'), **env_args)
-        # wb.save_figures('SYS', cwdp('pictures'), **fig_args)
-        # wb.save_animations('SYS', cwdp('animations'), **ani_args)
-
-        # ----------------------------------------------------------------
-        # Can also save for each Design Point
-        # for i, dp in enumerate(wb.DPs):
-        # wb.set_active_DP(dp)
-
-        # mesh_file = 'mesh_DP{}.png'.format(i)
-        # mesh_args = dict(width=1920*2, height=1080*2, zoom_to_fit=True)
-        # wb.save_mesh_view('SYS', cwdp('pictures'), mesh_file, **mesh_args)
-
-        # fig_pref = 'Result_DP{}'.format(i)
-        # fig_args = dict(fpref=fig_pref, width=1920*2, height=1080*2, zoom_to_fit=True, fontfact=1.35)
-        # wb.save_figures('SYS', cwdp('pictures'), **fig_args)
-
-        # env_pref = 'Setup_DP{}'.format(i)
-        # env_args = dict(fpref=env_pref, width=1920, height=1080, zoom_to_fit=True, fontfact=1.5)
-        # wb.save_setups_view('SYS', cwdp('pictures'), **env_args)
-        # ==============================================================================
-
-        wb.output_parameters()
-        wb.export_wb_report()
-
-
-    except Exception as err_msg:
-        wb.fatal_error(err_msg)
-    finally:
-        wb.archive_if_complete()
-        wb.issue_end()
-"""
 
 
