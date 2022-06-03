@@ -18,7 +18,7 @@ class APJaya:
     ):
         self._logger = Logger('log.txt')
         self._log_ = self._logger.log
-        self._resultLog_ = Logger('ap_jaya_results.txt')
+        self._resultLog_ = Logger('ap_jaya_results.txt').log
         self.__iteration = 0                #Iteration for output
         self.parameters = parameters
         self.kids_number = kids_number
@@ -43,7 +43,6 @@ class APJaya:
             self._log_('[APJaya.__initialization begin child]')
             self.kids.append([])
             self.kids_temp.append([])
-            self.goal_function_temp.append(0)
 
             for j in range(len(self.parameters.inKeys())):
                 self.kids_temp[i].append(0)
@@ -90,6 +89,7 @@ class APJaya:
         if self._initialization_completed == False:
             for j in range(self.kids_number):
                 self.goal_function.append(goalFunction(self.results[j]))
+                self.goal_function_temp.append(0)
             self.best = min(self.goal_function)
             self.best_kid = self.kids[self.goal_function.index(self.best)]
             self.worst = max(self.goal_function)
@@ -97,7 +97,7 @@ class APJaya:
             self._initialization_completed == True
 
         else: 
-            for j in range(self.__kids_number):
+            for j in range(self.kids_number):
                 self.goal_function_temp[j] = goalFunction(self.results[j])
                 if self.goal_function_temp[j] < self.goal_function[j]:
                     self.goal_function[j] = self.goal_function_temp[j]
